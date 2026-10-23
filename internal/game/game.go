@@ -1,5 +1,5 @@
 package game
 
 type Game struct {
-	Id string
+	Id string `json:"id"`
 }

@@ -1,4 +1,4 @@
-package gameserver
+package api
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestListGamesEmpty(t *testing.T) {
-	gs := New()
+	gs := New(nil)
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games", nil))
 
@@ -30,8 +30,7 @@ func TestListGamesEmpty(t *testing.T) {
 }
 
 func TestListGamesWithGames(t *testing.T) {
-	gs := New()
-	gs.games = append(gs.games, &game.Game{Id: "a"}, &game.Game{Id: "b"})
+	gs := New([]*game.Game{{Id: "a"}, {Id: "b"}})
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games", nil))
 
@@ -45,9 +44,49 @@ func TestListGamesWithGames(t *testing.T) {
 }
 
 func TestListGamesMethodNotAllowed(t *testing.T) {
-	gs := New()
+	gs := New(nil)
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/games", nil))
+
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusMethodNotAllowed)
+	}
+}
+
+func TestGetGame(t *testing.T) {
+	gs := New([]*game.Game{{Id: "a"}, {Id: "b"}})
+	rec := httptest.NewRecorder()
+	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games/b", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", ct)
+	}
+	var got game.Game
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if got.Id != "b" {
+		t.Errorf("got %+v, want game b", got)
+	}
+}
+
+func TestGetGameNotFound(t *testing.T) {
+	gs := New([]*game.Game{{Id: "foo"}})
+	rec := httptest.NewRecorder()
+	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games/missing", nil))
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+func TestGetGameMethodNotAllowed(t *testing.T) {
+	gs := New([]*game.Game{{Id: "foo"}})
+	rec := httptest.NewRecorder()
+	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/games/foo", nil))
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusMethodNotAllowed)
