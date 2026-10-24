@@ -24,6 +24,17 @@
 
 <h1>Game {data.game.id}</h1>
 
+{#if data.game.players.length === 0}
+	<p>No players yet.</p>
+{:else}
+	<ul>
+		{#each data.game.players as player (player.name)}
+			<li>{player.name}</li>
+		{/each}
+	</ul>
+{/if}
+
+
 <h2>Debug</h2>
 <p>Version: {version ?? 'connecting…'}</p>
 <button onclick={refresh}>Refresh</button>

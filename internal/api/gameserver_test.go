@@ -20,7 +20,7 @@ func TestListGamesEmpty(t *testing.T) {
 	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
 		t.Errorf("Content-Type = %q, want application/json", ct)
 	}
-	var got []game.Game
+	var got []game.Snapshot
 	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
@@ -30,11 +30,11 @@ func TestListGamesEmpty(t *testing.T) {
 }
 
 func TestListGamesWithGames(t *testing.T) {
-	gs := New([]*game.Game{{Id: "a"}, {Id: "b"}})
+	gs := New([]*game.Game{game.New("a", ""), game.New("b", "")})
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games", nil))
 
-	var got []game.Game
+	var got []game.Snapshot
 	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestListGamesMethodNotAllowed(t *testing.T) {
 }
 
 func TestGetGame(t *testing.T) {
-	gs := New([]*game.Game{{Id: "a"}, {Id: "b"}})
+	gs := New([]*game.Game{game.New("a", ""), game.New("b", "")})
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games/b", nil))
 
@@ -74,7 +74,7 @@ func TestGetGame(t *testing.T) {
 }
 
 func TestGetGameNotFound(t *testing.T) {
-	gs := New([]*game.Game{{Id: "foo"}})
+	gs := New([]*game.Game{game.New("foo", "")})
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/games/missing", nil))
 
@@ -84,7 +84,7 @@ func TestGetGameNotFound(t *testing.T) {
 }
 
 func TestGetGameMethodNotAllowed(t *testing.T) {
-	gs := New([]*game.Game{{Id: "foo"}})
+	gs := New([]*game.Game{game.New("foo", "")})
 	rec := httptest.NewRecorder()
 	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodDelete, "/games/foo", nil))
 

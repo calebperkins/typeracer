@@ -43,7 +43,11 @@ func (gs *Server) refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (gs *Server) listGames(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, gs.games)
+	snaps := make([]game.Snapshot, 0, len(gs.games))
+	for _, g := range gs.games {
+		snaps = append(snaps, g.Snapshot())
+	}
+	writeJSON(w, snaps)
 }
 
 func (gs *Server) getGame(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +94,7 @@ func writeJSON(w http.ResponseWriter, v any) {
 
 func (gs *Server) findGameById(id string) *game.Game {
 	for _, g := range gs.games {
-		if g.Id == id {
+		if g.Id() == id {
 			return g
 		}
 	}

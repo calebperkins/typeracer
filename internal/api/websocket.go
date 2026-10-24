@@ -22,9 +22,10 @@ func (gs *Server) getGameWebsocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenCookie, err := r.Cookie(fmt.Sprintf("game-%s-token", gameId))
-	var _ *game.Player
+	var _ game.Player
 	if err == nil {
-		_ = g.PlayerByToken(tokenCookie.Value)
+		_, _ = g.PlayerByToken(tokenCookie.Value)
+		// todo do something with this
 	} else {
 		// spectator
 	}
