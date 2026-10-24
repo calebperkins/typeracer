@@ -25,13 +25,13 @@ func (gs *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /games", gs.listGames)
 	mux.HandleFunc("GET /games/{id}", gs.getGame)
+	mux.HandleFunc("POST /games/{id}", gs.refresh)
 	mux.HandleFunc("GET /games/{id}/ws", gs.getGameWebsocket)
 	mux.HandleFunc("POST /games/{id}/players", gs.joinGame)
-	mux.HandleFunc("POST /games/{id}/", gs.tick)
 	return mux
 }
 
-func (gs *Server) tick(w http.ResponseWriter, r *http.Request) {
+func (gs *Server) refresh(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	g := gs.findGameById(id)
 	if g == nil {

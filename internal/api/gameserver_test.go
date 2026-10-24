@@ -86,7 +86,7 @@ func TestGetGameNotFound(t *testing.T) {
 func TestGetGameMethodNotAllowed(t *testing.T) {
 	gs := New([]*game.Game{{Id: "foo"}})
 	rec := httptest.NewRecorder()
-	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/games/foo", nil))
+	gs.Routes().ServeHTTP(rec, httptest.NewRequest(http.MethodDelete, "/games/foo", nil))
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusMethodNotAllowed)

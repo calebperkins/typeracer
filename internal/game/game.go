@@ -41,6 +41,8 @@ func generateSecureToken(length int) string {
 
 // Advance the game state, for debugging only
 func (g *Game) Refresh() {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
 	g.publish()
 }
 
@@ -60,9 +62,10 @@ func (g *Game) PlayerByToken(token string) *Player {
 	return nil
 }
 
+// publish must be called with g.mutex held.
 func (g *Game) publish() {
 	g.version += 1
-	s := g.Snapshot()
+	s := g.snapshot()
 	for ch := range g.subs {
 		select {
 		case ch <- s:
@@ -78,6 +81,13 @@ func (g *Game) publish() {
 }
 
 func (g *Game) Snapshot() Snapshot {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+	return g.snapshot()
+}
+
+// snapshot must be called with g.mutex held.
+func (g *Game) snapshot() Snapshot {
 	return Snapshot{Id: g.Id, Players: g.players, Version: g.version}
 }
 
@@ -88,7 +98,7 @@ func (g *Game) Subscribe() (<-chan Snapshot, func()) {
 	ch := make(chan Snapshot, 1)
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
-	ch <- g.Snapshot()
+	ch <- g.snapshot()
 	g.subs[ch] = struct{}{}
 	return ch, func() {
 		g.mutex.Lock()
