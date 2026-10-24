@@ -9,8 +9,8 @@ import (
 
 func main() {
 	server := api.New([]*game.Game{
-		{Id: "foo"},
-		{Id: "bar"},
+		game.New("foo", "bear"),
+		game.New("bar", "bear"),
 	})
 	http.ListenAndServe(":8090", server.Routes())
 }

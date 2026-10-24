@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"net/http"
 
@@ -25,7 +25,21 @@ func (gs *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /games", gs.listGames)
 	mux.HandleFunc("GET /games/{id}", gs.getGame)
+	mux.HandleFunc("GET /games/{id}/ws", gs.getGameWebsocket)
+	mux.HandleFunc("POST /games/{id}/players", gs.joinGame)
+	mux.HandleFunc("POST /games/{id}/", gs.tick)
 	return mux
+}
+
+func (gs *Server) tick(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	g := gs.findGameById(id)
+	if g == nil {
+		http.Error(w, fmt.Sprintf("game %q not found", id), http.StatusNotFound)
+		return
+	}
+	g.Refresh()
+	writeJSON(w, g.Snapshot())
 }
 
 func (gs *Server) listGames(w http.ResponseWriter, r *http.Request) {
@@ -39,12 +53,39 @@ func (gs *Server) getGame(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("game %q not found", id), http.StatusNotFound)
 		return
 	}
-	writeJSON(w, g)
+	writeJSON(w, g.Snapshot())
+}
+
+type joinGameRequestBody struct {
+	name string
+}
+
+func (gs *Server) joinGame(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	g := gs.findGameById(id)
+	if g == nil {
+		http.Error(w, fmt.Sprintf("game %q not found", id), http.StatusNotFound)
+		return
+	}
+	var playerReq joinGameRequestBody
+	if err := json.UnmarshalRead(r.Body, &playerReq); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	p := g.Join(playerReq.name)
+	http.SetCookie(w, &http.Cookie{
+		Name:  "token",
+		Value: p.Token,
+	})
+	writeJSON(w, p)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(v)
+	err := json.MarshalWrite(w, v)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (gs *Server) findGameById(id string) *game.Game {
