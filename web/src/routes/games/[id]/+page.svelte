@@ -5,30 +5,32 @@
 	import { onMount } from 'svelte';
 
 	let { data }: PageProps = $props();
+	let game = $derived(data.game);
 
 	let version = $state<string | null>(null);
 
 	onMount(() => {
 		const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-		const ws = new WebSocket(`${proto}://${location.host}/api/games/${data.game.id}/ws`);
+		const ws = new WebSocket(`${proto}://${location.host}/api/games/${game.id}/ws`);
 		ws.onmessage = (e) => {
 			version = JSON.parse(e.data).data;
 		};
 		return () => ws.close();
 	});
 
-	const refresh = () => fetch(`/api/games/${data.game.id}/`, { method: 'POST' });
+	const refresh = () => fetch(`/api/games/${game.id}`, { method: 'POST' });
 </script>
 
 <a href={resolve('/')}>&larr; Games</a>
 
-<h1>Game {data.game.id}</h1>
+<h1>Game {game.id}</h1>
+<p>{game.prompt}</p>
 
-{#if data.game.players.length === 0}
+{#if game.players.length === 0}
 	<p>No players yet.</p>
 {:else}
 	<ul>
-		{#each data.game.players as player (player.name)}
+		{#each game.players as player (player.name)}
 			<li>{player.name}</li>
 		{/each}
 	</ul>
